@@ -12,22 +12,22 @@ This is the first challenge in your Advanced Programming Class.
 Build Requirements
 ------------------
 ```
-# Build Requirements here
+Python
+Make
 ```
 
 
 How to build
 ------------
 ```
-# instructions here
+make build
 ```
 
 
 How to Run
 ----------
 ```
-# instructions here
-```
+make test
 
 
 General instructions
