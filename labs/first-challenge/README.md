@@ -28,6 +28,7 @@ How to Run
 ----------
 ```
 make test
+```
 
 
 General instructions
