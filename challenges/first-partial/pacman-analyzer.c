@@ -22,8 +22,11 @@ char *readLine(int file, int b_size);
 char *getWord(char *str, int start, int end);
 void addElement(struct Node **head, char *name, char *date, int type);
 void printList(struct Node *node);
+void writeList(int writeFile, struct Node *node);
 
 size_t read(int fd, void *buf, size_t cnt);
+size_t write (int fd, void* buf, size_t cnt); 
+int close(int fd);
 
 int main(int argc, char **argv)
 {
@@ -31,10 +34,10 @@ int main(int argc, char **argv)
     if (argc < 4)
     {
         printf("Usage:./pacman-analizer.o \n");
-        return 1;
+        return 0;
     }
 
-    analizeLog(argv[2], REPORT_FILE);
+    analizeLog(argv[2], argv[4]);
 
     return 0;
 }
@@ -52,11 +55,10 @@ void analizeLog(char *logFile, char *report)
     int installedPackages = 0, removedPackages = 0, upgradePackages = 0, currentInstalled = 0;
 
     //  Open file to readOnly
-    int fileOpen;
-    fileOpen = open(logFile, O_RDONLY);
+    int fileOpen = open(logFile, O_RDONLY);
     if (fileOpen == -1)
     {
-        printf("Error while opening input file\n");
+        printf("Error while opening log file\n");
         return;
     }
 
@@ -164,17 +166,69 @@ void analizeLog(char *logFile, char *report)
         }
     }
 
-    //  CLOSE FILE
-    close(fileOpen);
+    //  CLOSE LOG FILE
+    if(close(fileOpen) < 0){
+        printf("Error while closing log file\n");
+        return;
+    }
+
+    //  OPEN REPORT FILE TO WRITEONLY
+    int reportFile = open(report, O_WRONLY | O_CREAT , 0644);
+    if(reportFile < 0)
+    {
+        printf("Error while opening report file\n");
+        return;
+    }
+
+
+    currentInstalled = installedPackages - removedPackages;    
+
+    //  WRITE DATA ON FILE
+    write(reportFile, "Pacman Packages Report\n", strlen("Pacman Packages Report\n"));
+    write(reportFile, "----------------------\n", strlen("----------------------\n"));
+    
+    //  WRITE PACMAN PACKAGES REPORT
+    int size_b = snprintf(NULL, 0, 
+    "- Installed packages \t: %d\n"
+    "- Removed packages \t: %d\n"
+    "- Upgraded packages \t: %d\n"
+    "- Current installed \t: %d\n\n", 
+    installedPackages, removedPackages, upgradePackages, currentInstalled);
+
+    char *buf = (char *)malloc(size_b + 1);
+    if(buf==NULL){
+        printf("Error while writing, out of memory");
+        return;
+    }
+
+    snprintf(buf, size_b + 1, 
+    "- Installed packages \t: %d\n"
+    "- Removed packages \t: %d\n"
+    "- Upgraded packages \t: %d\n"
+    "- Current installed \t: %d\n\n", 
+    installedPackages, removedPackages, upgradePackages, currentInstalled);
+    write(reportFile, buf, size_b);
+    free(buf);
+
+    //  WRITE LIST OF PACKAGES
+    write(reportFile, "List of packages\n", strlen("List of packages\n"));
+    write(reportFile, "----------------\n", strlen("----------------\n"));
+    writeList(reportFile, head);
+       
+
+    //  CLOSE LOG FILE
+    if(close(reportFile) < 0){
+        printf("Error while closing report file\n");
+        return;
+    }
 
     //  PRINT TOTALS
-    currentInstalled = installedPackages - removedPackages;
     printf("Pacman Packages Report\n");
     printf("----------------------\n");
     printf("- Installed packages : %d\n", installedPackages);
     printf("- Removed packages   : %d\n", removedPackages);
     printf("- Upgraded packages  : %d\n", upgradePackages);
-    printf("- Current installed  : %d\n", currentInstalled);
+    printf("- Current installed  : %d\n\n", currentInstalled);
 
     printf("List of packages\n");
     printf("----------------\n");
@@ -262,7 +316,6 @@ void addElement(struct Node **head, char *name, char *date, int type)
     {
         //  CREATE NEW HEAD
         *head = newElement;
-        printf("NEW LIST\n");
         return;
     }
 
@@ -297,6 +350,33 @@ void addElement(struct Node **head, char *name, char *date, int type)
     //  IF PACKAGE DOESN'T EXISTS
     last->next = newElement;
     return;
+}
+
+void writeList(int writeFile, struct Node *node){
+    //  TRAVERSE TILL LAST NODE
+    while (node != NULL)
+    {
+        int size = snprintf(NULL, 0, 
+        "- Package Name \t: %s\n"
+        "  - Install date \t: %s\n"
+        "  - Last update date \t: %s\n"
+        "  - How many updates \t: %d\n"
+        "  - Removal date \t: %s\n", 
+        node->packageName, node->installDate, node->lastUpdateDate, node->numUpdates, node->removalDate);
+
+        char *buf = (char *)malloc(size + 1);
+        snprintf(buf, size + 1, 
+        "- Package Name \t: %s\n"
+        "  - Install date \t: %s\n"
+        "  - Last update date \t: %s\n"
+        "  - How many updates \t: %d\n"
+        "  - Removal date \t: %s\n", 
+        node->packageName, node->installDate, node->lastUpdateDate, node->numUpdates, node->removalDate);
+
+        write(writeFile, buf, size);
+        free(buf);
+        node = node->next;
+    }
 }
 
 void printList(struct Node *node)
