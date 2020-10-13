@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"time"
+	"os"
 )
 
 func handleConn(c net.Conn) {
@@ -20,7 +21,19 @@ func handleConn(c net.Conn) {
 }
 
 func main() {
-	listener, err := net.Listen("tcp", "localhost:9090")
+	if(len(os.Args) != 3){
+		log.Print("ERROR: Missing parameters")
+	}
+
+	args := os.Args
+
+	if args[1] != "-port" {
+		log.Print("ERROR: Missing flag -port")
+	}
+
+	port := "localhost:" + args[2]
+
+	listener, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatal(err)
 	}
