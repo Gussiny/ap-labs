@@ -16,8 +16,8 @@ void handleSignal(int sig);
 #define EQUALS     65
 #define INVALID    66
 
-long double progress = 0;
-long double total = 1;
+unsigned long progress = 0;
+unsigned long total = 1;
 
 static const unsigned char d[] = {
     66,66,66,66,66,66,66,66,66,66,64,66,66,66,66,66,66,66,66,66,66,66,66,66,66,
@@ -66,23 +66,25 @@ int main(int argc, char *argv[])
 
 int handleFile(char *iFile, int handId){
 	FILE *file;
-	char *output, *content;
-	long fileSize, outputSize;
+	char *content;
+	unsigned long fileSize;
 
 	if( (file = fopen(iFile, "r")) == NULL){
 		return -1;
 	}
 
-	fseek(file, 0, SEEK_END);
-	fileSize = ftell(file);
+	fseeko(file, 0, SEEK_END);
+	fileSize = ftello(file);
 	total = fileSize;
-	fseek(file, 0, SEEK_SET);
+	fseeko(file, 0, SEEK_SET);
 	content = malloc(fileSize+1);
-	outputSize = 8 * ceil(fileSize/3);
-	output = malloc(outputSize);
 
 	fread(content, 1, fileSize, file);
 	fclose(file);
+
+
+	unsigned long outputSize = 8 * ceil(fileSize/3);
+	char *output = malloc(outputSize);
 
 	int resultHandler;
 	char *outputName;
@@ -104,7 +106,11 @@ int handleFile(char *iFile, int handId){
 	}
 
 	printf("%s\n", outputName);
-	FILE *outputFile = fopen(outputName, "w");
+	FILE *outputFile;
+	if( (outputFile = fopen(outputName, "w")) == NULL){
+		errorf("ERROR: Error while writing the output file\n");
+		return -1;
+	}
 	fprintf(outputFile, "%s", output);
 	fclose(outputFile);
 
@@ -115,7 +121,7 @@ int handleFile(char *iFile, int handId){
 }
 
 void handleSignal(int sig){
-	infof("PROGRESS: %Lf % \n", (progress/total) * 100);
+	infof("PROGRESS: %ld%% \n", progress*100/total);
 }
 
 
