@@ -11,16 +11,51 @@ import (
 	"log"
 	"net"
 	"os"
+	"fmt"
+	"bufio"
 )
 
 //!+
 func main() {
-	conn, err := net.Dial("tcp", "localhost:8000")
+
+	if len(os.Args) < 5 {
+		fmt.Println("ERROR: Missing parameters")
+		os.Exit(1)
+	}
+
+	var user, server string
+
+	if os.Args[1] == "-user" {
+		user = os.Args[2]
+	} else{
+		fmt.Println("ERROR: Missing flag -user")
+		os.Exit(1)
+	}
+
+	if os.Args[3] == "-server" {
+		server = os.Args[4]
+	} else{
+		fmt.Println("ERROR: Missing flag -server")
+		os.Exit(1)
+	}
+
+	conn, err := net.Dial("tcp", server)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	_, er := io.WriteString(conn, user+"\n")
+	if er != nil {
+		log.Fatal(er)
+	}
+
 	done := make(chan struct{})
 	go func() {
+		input := bufio.NewScanner(conn)
+		for input.Scan(){
+			fmt.Print("\n" + input.Text())
+			fmt.Print("\n" + user + " > ")
+		}
 		io.Copy(os.Stdout, conn) // NOTE: ignoring errors
 		log.Println("done")
 		done <- struct{}{} // signal the main goroutine
