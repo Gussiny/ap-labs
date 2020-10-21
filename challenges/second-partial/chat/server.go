@@ -55,7 +55,7 @@ func sendMessage(sendTo string, fromUser *user, message string){
 	sendToUser := users[sendTo];
 	if sendToUser != nil {
 		//	Check if the user exists
-		sendToUser.ch <- fromUser.name  + " > " + message
+		sendToUser.ch <- fromUser.name  + " (private) > " + message
 	} else {
 		fromUser.ch <- "irc-server > ERROR: User doesn't exists"
 	}
@@ -118,7 +118,7 @@ func kickUser(name string, incomeUser *user) {
 func deleteUser(name string){
 	usr := users[name]
 	close(usr.ch)
-	usr.conn.close()
+
 	delete(users, usr.name)
 
 	if usr.admin && len(users) > 0 {
@@ -226,6 +226,7 @@ func handleConn(conn net.Conn) {
 				to := command[1]
 				message := strings.Join(command[2:], " ")
 				sendMessage(to, &incomeUser, message)
+				ch <- "irc-server > Message sended"
 			}
 
 		// Command /time
