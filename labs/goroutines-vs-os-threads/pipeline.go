@@ -17,12 +17,12 @@ func pipeline(in chan struct{}, out chan struct{}, current int, total int) {
 }
 
 func main() {
-	var maxStages = 200000
-	var startTime = time.Now()
+	var maxStages = 2500000
 
 	in := make(chan struct{})
 	out := make(chan struct{})
 
+	startTime := time.Now()
 	go pipeline(in, out, 0, maxStages)
 	<-waitChan
 
